@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Home - Online Quiz System{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Welcome, {{ session.name }}</h1>
+  <p class="small">You are logged in as <strong>{{ session.role }}</strong>.</p>
+
+  <h2>Quiz Categories</h2>
+  {% if categories %}
+    <div class="grid">
+      {% for c in categories %}
+        <a class="category" href="{{ url_for('category', category_id=c.category_id) }}">
+          <h3>{{ c.name }}</h3>
+          <p>{{ c.description or "No description available." }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="small">No quiz categories are available yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

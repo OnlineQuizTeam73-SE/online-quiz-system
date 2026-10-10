@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Register - Online Quiz System{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Create an account</h1>
+  <form method="post">
+    <label for="name">Name</label>
+    <input id="name" name="name" type="text" maxlength="100" value="{{ name }}" required>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" maxlength="100" value="{{ email }}" required>
+    <label for="password">Password (min 6 characters)</label>
+    <input id="password" name="password" type="password" required>
+    <label for="confirm">Confirm password</label>
+    <input id="confirm" name="confirm" type="password" required>
+    <button type="submit">Register</button>
+  </form>
+  <p class="small">Already registered? <a href="{{ url_for('login') }}">Login</a></p>
+</div>
+{% endblock %}
