@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Quiz Results - Online Quiz System{% endblock %}
+{% block content %}
+<div class="card">
+    <p class="small">
+        <a href="{{ url_for('category', category_id=quiz.category_id) }}">
+            &larr; Back to {{ quiz.category_name }} quizzes
+        </a>
+    </p>
+
+    <h1>{{ quiz.title }} - Results</h1>
+    <p>Your final score: <strong>{{ score }} / {{ total }}</strong></p>
+    <p>Time taken: {{ time_taken }} seconds</p>
+
+    {% if timed_out %}
+        <p>The time limit expired and the quiz was submitted automatically.</p>
+    {% else %}
+        <p>Your quiz was submitted successfully.</p>
+    {% endif %}
+
+    <h2>Answer Feedback</h2>
+    {% for answer in answers %}
+        <fieldset class="question">
+            <legend>
+                Question {{ loop.index }} —
+                {% if answer.is_correct %}Correct
+                {% elif answer.selected_option %}Incorrect
+                {% else %}Unanswered
+                {% endif %}
+            </legend>
+
+            <p class="qtext">{{ answer.question_text }}</p>
+            <p><strong>Your answer:</strong>
+                {% if answer.selected_text %}
+                    {{ answer.selected_option }}. {{ answer.selected_text }}
+                {% else %}
+                    Not answered
+                {% endif %}
+            </p>
+            <p><strong>Correct answer:</strong>
+                {{ answer.correct_option }}. {{ answer.correct_text }}
+            </p>
+
+            {% if answer.is_correct %}
+                <p>Correct! Well done.</p>
+            {% elif answer.selected_option %}
+                <p>Review the correct answer above.</p>
+            {% else %}
+                <p>No answer was selected for this question.</p>
+            {% endif %}
+        </fieldset>
+    {% endfor %}
+
+    <p>
+        <a href="{{ url_for('category', category_id=quiz.category_id) }}">
+            Return to quizzes
+        </a>
+    </p>
+</div>
+{% endblock %}

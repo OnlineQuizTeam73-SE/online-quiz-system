@@ -15,9 +15,9 @@ with open(os.path.join(os.path.dirname(__file__), "schema.sql")) as f:
 
 # Users (Test Plan: testuser01, admin01) -- passwords are for TESTING only
 con.execute("INSERT INTO User(name,email,password,role) VALUES (?,?,?,?)",
-            ("testuser01", "testuser01@example.com", generate_password_hash("Test@1234"), "User"))
+            ("testuser01", "testuser01@example.com", generate_password_hash("Test@1234", method="pbkdf2:sha256"), "User"))
 con.execute("INSERT INTO User(name,email,password,role) VALUES (?,?,?,?)",
-            ("admin01", "admin01@example.com", generate_password_hash("Admin@1234"), "Administrator"))
+            ("admin01", "admin01@example.com", generate_password_hash("Admin@1234", method="pbkdf2:sha256"), "Administrator"))
 admin_id = con.execute("SELECT user_id FROM User WHERE name='admin01'").fetchone()[0]
 
 # Categories (Test Plan: Java, DBMS, Python)

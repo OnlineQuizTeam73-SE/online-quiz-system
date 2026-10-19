@@ -6,7 +6,7 @@ S1-05: Display the quizzes of the selected category (REQ-03)
 S1-06: Display the questions and answer options of a quiz (REQ-04, REQ-05)
 Run:  python app.py   then open http://127.0.0.1:5000
 """
-import os, re, sqlite3
+import os, re, sqlite3, time
 from functools import wraps
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -83,7 +83,7 @@ def register():
         # role is always 'User'. Administrators are created by the database seed only.
         get_db().execute(
             "INSERT INTO User(name, email, password, role) VALUES (?, ?, ?, 'User')",
-            (name, email, generate_password_hash(password)))
+            (name, email, generate_password_hash(password, method="pbkdf2:sha256")))
         get_db().commit()
         flash("Registration successful. Please log in.", "success")
         return redirect(url_for("login"))
@@ -149,35 +149,142 @@ def category(category_id):
            ORDER BY q.title""", (category_id,)).fetchall()
     return render_template("category.html", category=selected, quizzes=quizzes)
 
-
 @app.route("/quiz/<int:quiz_id>")
 @login_required
 def quiz(quiz_id):
-    # S1-06 (REQ-04, REQ-05): show the questions of the selected quiz, 4 options each
-    selected = get_db().execute(
-        """SELECT q.quiz_id, q.title, q.time_limit, q.category_id, c.name AS category_name
-           FROM Quiz q JOIN Category c ON c.category_id = q.category_id
-           WHERE q.quiz_id = ?""", (quiz_id,)).fetchone()
+    db = get_db()
+    selected = db.execute(
+        """SELECT q.quiz_id, q.title, q.time_limit, q.category_id,
+                  c.name AS category_name
+           FROM Quiz q
+           JOIN Category c ON c.category_id = q.category_id
+           WHERE q.quiz_id = ?""",
+        (quiz_id,)
+    ).fetchone()
+
     if selected is None:
         flash("That quiz does not exist.", "error")
         return redirect(url_for("home"))
 
-    # NOTE: correct_option is deliberately NOT selected, so the answer never reaches
-    # the browser. Scoring is done on the server (S1-10).
-    questions = get_db().execute(
-        """SELECT question_id, question_text, option_a, option_b, option_c, option_d
-           FROM Question WHERE quiz_id = ? ORDER BY question_id""", (quiz_id,)).fetchall()
-    return render_template("quiz.html", quiz=selected, questions=questions)
+    start_key = f"quiz_started_at_{quiz_id}"
+    if start_key not in session:
+        session[start_key] = time.time()
+
+    deadline_ms = int(
+        (float(session[start_key]) + int(selected["time_limit"]) * 60)
+        * 1000
+    )
+
+    questions = db.execute(
+        """SELECT question_id, question_text, option_a, option_b,
+                  option_c, option_d
+           FROM Question
+           WHERE quiz_id = ?
+           ORDER BY question_id""",
+        (quiz_id,)
+    ).fetchall()
+
+    return render_template(
+        "quiz.html",
+        quiz=selected,
+        questions=questions,
+        deadline_ms=deadline_ms
+    )
 
 
 @app.route("/quiz/<int:quiz_id>/submit", methods=["POST"])
 @login_required
 def submit_quiz(quiz_id):
-    # PLACEHOLDER: S1-07 (timer), S1-08 (record answers) and S1-10 (scoring)
-    # replace this stub. Radio inputs are named "q_<question_id>" with value A/B/C/D.
-    flash("Submitting answers is not implemented yet (S1-08).", "error")
-    return redirect(url_for("quiz", quiz_id=quiz_id))
+    db = get_db()
 
+    quiz_record = db.execute(
+        """SELECT q.quiz_id, q.title, q.time_limit, q.category_id,
+                  c.name AS category_name
+           FROM Quiz q
+           JOIN Category c ON c.category_id = q.category_id
+           WHERE q.quiz_id = ?""",
+        (quiz_id,)
+    ).fetchone()
+
+    if quiz_record is None:
+        flash("That quiz does not exist.", "error")
+        return redirect(url_for("home"))
+
+    start_key = f"quiz_started_at_{quiz_id}"
+    started_at = session.get(start_key)
+
+    if started_at is None:
+        flash("Your quiz session has expired. Please start again.", "error")
+        return redirect(
+            url_for("category", category_id=quiz_record["category_id"])
+        )
+
+    elapsed = max(0, time.time() - float(started_at))
+    limit_seconds = int(quiz_record["time_limit"]) * 60
+    timed_out = request.form.get("timeout_submission") == "1"
+
+    # Permit a short network/browser delay for the automatic timeout submit.
+    # Late manual submissions and requests arriving much later are rejected.
+    if elapsed > limit_seconds:
+        if not timed_out or elapsed > limit_seconds + 5:
+            session.pop(start_key, None)
+            flash("Time expired. Late answers were not accepted.", "error")
+            return redirect(
+                url_for("category", category_id=quiz_record["category_id"])
+            )
+
+    questions = db.execute(
+        """SELECT question_id, question_text, option_a, option_b,
+                  option_c, option_d, correct_option
+           FROM Question
+           WHERE quiz_id = ?
+           ORDER BY question_id""",
+        (quiz_id,)
+    ).fetchall()
+
+    if not questions:
+        session.pop(start_key, None)
+        flash("This quiz has no questions to evaluate.", "error")
+        return redirect(
+            url_for("category", category_id=quiz_record["category_id"])
+        )
+
+    answers = []
+    score = 0
+
+    for q in questions:
+        chosen = request.form.get(f"q_{q['question_id']}", "").upper()
+        if chosen not in ("A", "B", "C", "D"):
+            chosen = ""
+
+        correct = q["correct_option"]
+        is_correct = bool(chosen) and chosen == correct
+        if is_correct:
+            score += 1
+
+        chosen_text = q[f"option_{chosen.lower()}"] if chosen else None
+
+        answers.append({
+            "question_text": q["question_text"],
+            "selected_option": chosen,
+            "selected_text": chosen_text,
+            "correct_option": correct,
+            "correct_text": q[f"option_{correct.lower()}"],
+            "is_correct": is_correct
+        })
+
+    actual_time = min(int(elapsed), limit_seconds)
+    session.pop(start_key, None)
+
+    return render_template(
+        "results.html",
+        quiz=quiz_record,
+        answers=answers,
+        score=score,
+        total=len(questions),
+        time_taken=actual_time,
+        timed_out=timed_out or elapsed >= limit_seconds
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
