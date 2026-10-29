@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }} - Online Quiz System{% endblock %}
+{% block content %}
+<div class="card">
+  <p class="small"><a href="{{ url_for('home') }}">&larr; Back to categories</a></p>
+  <h1>{{ category.name }}</h1>
+  <p>{{ category.description or "No description available." }}</p>
+  <p class="small">Selected category ID: {{ category.category_id }}</p>
+
+  <h2>Available Quizzes</h2>
+  {% if quizzes %}
+    <div class="quiz-list">
+      {% for q in quizzes %}
+        <div class="quiz">
+          <h3>{{ q.title }}</h3>
+          <p>Time limit: {{ q.time_limit }} minute{{ '' if q.time_limit == 1 else 's' }}
+             &middot; {{ q.question_count }} question{{ '' if q.question_count == 1 else 's' }}</p>
+          <a class="btn" href="{{ url_for('quiz', quiz_id=q.quiz_id) }}">Start Quiz</a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="small">No quizzes are available in this category yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

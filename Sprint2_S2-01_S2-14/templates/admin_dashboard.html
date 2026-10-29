@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - Online Quiz System{% endblock %}
+{% block content %}
+<div style="max-width: 850px; margin: 20px auto;">
+  <h2>🛠️ Administrator Dashboard</h2>
+  <p>Manage quiz categories and questions.</p>
+
+  <div style="background: #fdfdfd; padding: 18px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 25px;">
+    <h3>Add New Quiz Category</h3>
+    <form action="{{ url_for('admin_add_category') }}" method="POST">
+      <div style="margin-bottom: 10px;">
+        <label for="name"><strong>Category Name:</strong></label><br>
+        <input type="text" id="name" name="name" style="width: 60%; padding: 7px; margin-top: 4px;" placeholder="e.g., Python Basics" required>
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label for="description"><strong>Description:</strong></label><br>
+        <input type="text" id="description" name="description" style="width: 60%; padding: 7px; margin-top: 4px;" placeholder="Short summary of this category">
+      </div>
+      <button type="submit" style="padding: 7px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Add Category</button>
+    </form>
+  </div>
+
+  <div style="margin-bottom: 25px;">
+    <h3>Existing Categories ({{ categories|length }})</h3>
+    <ul>
+      {% for cat in categories %}
+        <li><strong>{{ cat['name'] }}</strong> — {{ cat['description'] or 'No description provided' }}</li>
+      {% else %}
+        <li>No categories created yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <h3>Manage Quizzes & Questions</h3>
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: left;">
+    <thead style="background: #f2f2f2;">
+      <tr>
+        <th>Quiz Title</th>
+        <th>Category</th>
+        <th>Questions</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for q in quizzes %}
+      <tr>
+        <td><strong>{{ q['title'] }}</strong></td>
+        <td>{{ q['category_name'] }}</td>
+        <td>{{ q['question_count'] }} question(s)</td>
+        <td>
+          <a href="{{ url_for('admin_manage_questions', quiz_id=q['quiz_id']) }}" style="padding: 5px 10px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 0.9em;">Manage Questions</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" style="text-align: center; color: #777;">No quizzes available.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="margin-top: 25px;">
+    <a href="{{ url_for('home') }}">← Back to Home</a>
+  </p>
+</div>
+{% endblock %}

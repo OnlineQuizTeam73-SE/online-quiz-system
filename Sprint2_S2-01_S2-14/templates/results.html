@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Quiz Result Report{% endblock %}
+{% block content %}
+<div class="result-card" style="max-width: 650px; margin: 20px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
+  <h2>Quiz Result Report</h2>
+  <hr>
+  <p><strong>Candidate Name:</strong> {{ result['user_name'] }}</p>
+  <p><strong>Quiz Title:</strong> {{ result['quiz_title'] }}</p>
+  <p><strong>Category:</strong> {{ result['category_name'] }}</p>
+  <p><strong>Score:</strong> <strong style="color: #007bff; font-size: 1.2em;">{{ result['score'] }} / {{ result['total_questions'] }}</strong></p>
+  <p><strong>Time Taken:</strong> {{ result['time_taken'] }} seconds</p>
+  <p><strong>Attempt Date:</strong> {{ result['attempted_on'] }}</p>
+
+  {% if answers %}
+    <h3>Answer Review</h3>
+    <ol>
+      {% for a in answers %}
+        <li style="margin-bottom: 12px;">
+          <strong>{{ a['question_text'] }}</strong><br>
+          Your Answer: 
+          {% if a['is_correct'] %}
+            <span style="color: green; font-weight: bold;">{{ a['selected_option'] }} - {{ a['selected_text'] }} (Correct)</span>
+          {% else %}
+            <span style="color: red; font-weight: bold;">{{ a['selected_option'] or 'None' }} - {{ a['selected_text'] or 'No option selected' }} (Wrong)</span><br>
+            <span style="color: green;">Correct Answer: {{ a['correct_option'] }} - {{ a['correct_text'] }}</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  {% endif %}
+
+  <div style="margin-top: 20px;">
+    <a href="{{ url_for('leaderboard', quiz_id=result['quiz_id']) }}" class="btn" style="padding: 8px 14px; background: #28a745; color: white; text-decoration: none; border-radius: 4px;">View Leaderboard</a>
+    <a href="{{ url_for('user_results_history') }}" class="btn" style="padding: 8px 14px; background: #17a2b8; color: white; text-decoration: none; border-radius: 4px; margin-left: 10px;">My History</a>
+    <a href="{{ url_for('home') }}" class="btn" style="padding: 8px 14px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; margin-left: 10px;">Home</a>
+  </div>
+</div>
+{% endblock %}

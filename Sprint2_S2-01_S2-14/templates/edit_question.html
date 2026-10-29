@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Edit Question - Online Quiz System{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 20px auto;">
+  <h2>Edit Question</h2>
+  <p><a href="{{ url_for('admin_manage_questions', quiz_id=q['quiz_id']) }}">← Back to Questions</a></p>
+
+  <!-- S2-09, TC22: Edit Question Form -->
+  <div style="background: #fdfdfd; padding: 20px; border: 1px solid #ddd; border-radius: 6px;">
+    <form method="POST">
+      <div style="margin-bottom: 12px;">
+        <label for="question_text"><strong>Question Text:</strong></label><br>
+        <textarea id="question_text" name="question_text" rows="3" style="width: 95%; padding: 8px; margin-top: 4px;" required>{{ q['question_text'] }}</textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div>
+          <label><strong>Option A:</strong></label><br>
+          <input type="text" name="option_a" value="{{ q['option_a'] }}" style="width: 90%; padding: 6px;" required>
+        </div>
+        <div>
+          <label><strong>Option B:</strong></label><br>
+          <input type="text" name="option_b" value="{{ q['option_b'] }}" style="width: 90%; padding: 6px;" required>
+        </div>
+        <div>
+          <label><strong>Option C:</strong></label><br>
+          <input type="text" name="option_c" value="{{ q['option_c'] }}" style="width: 90%; padding: 6px;" required>
+        </div>
+        <div>
+          <label><strong>Option D:</strong></label><br>
+          <input type="text" name="option_d" value="{{ q['option_d'] }}" style="width: 90%; padding: 6px;" required>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label for="correct_option"><strong>Correct Option (A-D):</strong></label>
+        <select id="correct_option" name="correct_option" style="padding: 6px; margin-left: 8px;" required>
+          <option value="A" {% if q['correct_option'] == 'A' %}selected{% endif %}>Option A</option>
+          <option value="B" {% if q['correct_option'] == 'B' %}selected{% endif %}>Option B</option>
+          <option value="C" {% if q['correct_option'] == 'C' %}selected{% endif %}>Option C</option>
+          <option value="D" {% if q['correct_option'] == 'D' %}selected{% endif %}>Option D</option>
+        </select>
+      </div>
+
+      <button type="submit" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Save Changes</button>
+      <a href="{{ url_for('admin_manage_questions', quiz_id=q['quiz_id']) }}" style="margin-left: 10px; color: #666; text-decoration: none;">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

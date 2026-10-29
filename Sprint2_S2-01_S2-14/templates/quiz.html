@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ quiz.title }} - Online Quiz System{% endblock %}
+{% block content %}
+<div class="card">
+  <p class="small"><a href="{{ url_for('category', category_id=quiz.category_id) }}">&larr; Back to {{ quiz.category_name }} quizzes</a></p>
+  <h1>{{ quiz.title }}</h1>
+  <p class="small">Time limit: {{ quiz.time_limit }} minute{{ '' if quiz.time_limit == 1 else 's' }}
+     &middot; {{ questions|length }} question{{ '' if questions|length == 1 else 's' }}</p>
+
+  <!-- S1-07 (Nakshathira): timer display goes here -->
+  <div id="timer-area"
+     data-deadline-ms="{{ deadline_ms }}"
+     role="timer" aria-live="polite">
+    Time remaining: <strong id="time-remaining">--:--</strong>
+</div>
+
+  {% if questions %}
+  <form method="post" action="{{ url_for('submit_quiz', quiz_id=quiz.quiz_id) }}" id="quiz-form">
+    <input type="hidden" name="timeout_submission" id="timeout-submission" value="0">
+    {% for q in questions %}
+      <fieldset class="question">
+        <legend>Question {{ loop.index }}</legend>
+        <p class="qtext">{{ q.question_text }}</p>
+        {% for letter, text in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+          <label class="option">
+            <input type="radio" name="q_{{ q.question_id }}" value="{{ letter }}">
+            <span>{{ letter }}. {{ text }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+    {% endfor %}
+    <button type="submit">Submit Quiz</button>
+  </form>
+  {% else %}
+    <p class="small">This quiz has no questions yet.</p>
+  {% endif %}
+</div>
+
+<script>
+(() => {
+    const area = document.getElementById("timer-area");
+    const display = document.getElementById("time-remaining");
+    const form = document.getElementById("quiz-form");
+    const timeoutField = document.getElementById("timeout-submission");
+
+    if (!area || !display || !form || !timeoutField) return;
+
+    const deadline = Number(area.dataset.deadlineMs);
+    if (!Number.isFinite(deadline) || deadline <= 0) {
+        display.textContent = "Timer unavailable";
+        return;
+    }
+
+    let intervalId = null;
+
+    function updateTimer() {
+        const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+
+        display.textContent =
+            String(mins).padStart(2, "0") + ":" +
+            String(secs).padStart(2, "0");
+
+        if (remaining === 0) {
+            clearInterval(intervalId);
+            if (form.dataset.submitted === "true") return;
+
+            timeoutField.value = "1";
+            form.dataset.submitted = "true";
+            display.textContent = "Time is up! Submitting quiz...";
+
+            const button = form.querySelector('button[type="submit"]');
+            if (button) button.disabled = true;
+
+            form.requestSubmit();
+        }
+    }
+
+    form.addEventListener("submit", () => {
+        if (form.dataset.submitted === "true") return;
+        form.dataset.submitted = "true";
+    });
+
+    updateTimer();
+    intervalId = setInterval(updateTimer, 250);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}My Quiz History - Online Quiz System{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 20px auto;">
+  <h2>📜 My Past Quiz Attempts</h2>
+  <p>Review your previous scores and performance reports.</p>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: left;">
+    <thead style="background-color: #f2f2f2;">
+      <tr>
+        <th>Quiz Title</th>
+        <th>Category</th>
+        <th>Score</th>
+        <th>Time Taken</th>
+        <th>Attempt Date</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in results %}
+      <tr>
+        <td><strong>{{ r['quiz_title'] }}</strong></td>
+        <td>{{ r['category_name'] }}</td>
+        <td><strong style="color: #007bff;">{{ r['score'] }} / {{ r['total_questions'] }}</strong></td>
+        <td>{{ r['time_taken'] }}s</td>
+        <td>{{ r['attempted_on'] }}</td>
+        <td>
+          <a href="{{ url_for('quiz_result_report', result_id=r['result_id']) }}" style="color: #28a745; text-decoration: underline;">View Report</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" style="text-align: center; color: #777;">You have not completed any quizzes yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="margin-top: 20px;">
+    <a href="{{ url_for('home') }}">← Back to Home</a>
+  </p>
+</div>
+{% endblock %}

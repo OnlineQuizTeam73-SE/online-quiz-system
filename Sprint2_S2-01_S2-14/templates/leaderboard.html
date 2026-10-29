@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard - Online Quiz System{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 20px auto;">
+  <h2>🏆 Quiz Leaderboard</h2>
+  <p>Top scores and rankings for completed quizzes.</p>
+
+  <form method="GET" action="{{ url_for('leaderboard') }}" style="margin-bottom: 20px;">
+    <label for="quiz_id"><strong>Filter by Quiz:</strong></label>
+    <select name="quiz_id" id="quiz_id" onchange="this.form.submit()" style="padding: 6px; margin-left: 8px;">
+      <option value="">-- All Quizzes --</option>
+      {% for q in quizzes %}
+        <option value="{{ q['quiz_id'] }}" {% if selected_quiz == q['quiz_id'] %}selected{% endif %}>
+          {{ q['title'] }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: left;">
+    <thead style="background-color: #f2f2f2;">
+      <tr>
+        <th>Rank</th>
+        <th>User Name</th>
+        <th>Quiz Title</th>
+        <th>Score</th>
+        <th>Time Taken</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rankings %}
+      <tr>
+        <td><strong>#{{ loop.index }}</strong></td>
+        <td>{{ r['user_name'] }}</td>
+        <td>{{ r['quiz_title'] }}</td>
+        <td><strong style="color: #007bff;">{{ r['score'] }} / {{ r['total_questions'] }}</strong></td>
+        <td>{{ r['time_taken'] }}s</td>
+        <td>{{ r['attempted_on'] }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" style="text-align: center; color: #777;">No completed quiz results found yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="margin-top: 20px;">
+    <a href="{{ url_for('home') }}">← Back to Home</a>
+  </p>
+</div>
+{% endblock %}
