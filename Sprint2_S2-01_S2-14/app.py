@@ -12,7 +12,10 @@ BASE = os.path.dirname(__file__)
 DB = os.path.join(BASE, "quiz.db")
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "change-this-before-submission-team73")
+DEFAULT_SECRET = "change-this-before-submission-team73"
+app.secret_key = os.getenv("SECRET_KEY", DEFAULT_SECRET)
+if app.secret_key == DEFAULT_SECRET:
+    print("WARNING: using the default SECRET_KEY. Set the SECRET_KEY environment variable before any real use.")
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -24,6 +27,30 @@ def get_db():
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
+
+
+RESULT_ANSWER_DDL = """
+CREATE TABLE IF NOT EXISTS ResultAnswer (
+    result_id       INTEGER NOT NULL,
+    question_id     INTEGER NOT NULL,
+    selected_option CHAR(1) NOT NULL DEFAULT '',
+    is_correct      INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (result_id, question_id),
+    FOREIGN KEY (result_id)   REFERENCES Result(result_id)     ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES Question(question_id) ON DELETE CASCADE
+)"""
+
+
+def ensure_schema():
+    """Add the ResultAnswer table to databases created before it existed."""
+    if os.path.exists(DB):
+        con = sqlite3.connect(DB)
+        con.execute(RESULT_ANSWER_DDL)
+        con.commit()
+        con.close()
+
+
+ensure_schema()
 
 
 @app.teardown_appcontext
@@ -268,6 +295,7 @@ def submit_quiz(quiz_id):
             score += 1
 
         answers.append({
+            "question_id": q["question_id"],
             "question_text": q["question_text"],
             "selected_option": chosen,
             "selected_text": q[f"option_{chosen.lower()}"] if chosen else None,
@@ -290,7 +318,13 @@ def submit_quiz(quiz_id):
     db.commit()
     result_id = cursor.lastrowid
 
-    session["latest_answers"] = answers
+    # Keep the answer review in the database so it survives refresh and re-login
+    db.executemany(
+        """INSERT INTO ResultAnswer (result_id, question_id, selected_option, is_correct)
+           VALUES (?, ?, ?, ?)""",
+        [(result_id, a["question_id"], a["selected_option"], int(a["is_correct"])) for a in answers],
+    )
+    db.commit()
     return redirect(url_for("quiz_result_report", result_id=result_id))
 
 
@@ -308,15 +342,34 @@ def quiz_result_report(result_id):
            JOIN User u ON u.user_id = r.user_id
            JOIN Quiz q ON q.quiz_id = r.quiz_id
            JOIN Category c ON c.category_id = q.category_id
-           WHERE r.result_id = ?""",
-        (result_id,),
+           WHERE r.result_id = ? AND (r.user_id = ? OR ? = 'Administrator')""",
+        (result_id, session["user_id"], session.get("role")),
     ).fetchone()
 
     if result is None:
         flash("Result report not found.", "error")
         return redirect(url_for("home"))
 
-    answers = session.pop("latest_answers", [])
+    rows = db.execute(
+        """SELECT qu.question_text, qu.option_a, qu.option_b, qu.option_c, qu.option_d,
+                  qu.correct_option, ra.selected_option, ra.is_correct
+           FROM ResultAnswer ra
+           JOIN Question qu ON qu.question_id = ra.question_id
+           WHERE ra.result_id = ?
+           ORDER BY qu.question_id""",
+        (result_id,),
+    ).fetchall()
+    answers = []
+    for row in rows:
+        chosen, correct = row["selected_option"], row["correct_option"]
+        answers.append({
+            "question_text": row["question_text"],
+            "selected_option": chosen,
+            "selected_text": row[f"option_{chosen.lower()}"] if chosen else None,
+            "correct_option": correct,
+            "correct_text": row[f"option_{correct.lower()}"],
+            "is_correct": bool(row["is_correct"]),
+        })
     return render_template("results.html", result=result, answers=answers)
 
 
@@ -505,4 +558,4 @@ def admin_delete_question(question_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.getenv("FLASK_DEBUG") == "1")
