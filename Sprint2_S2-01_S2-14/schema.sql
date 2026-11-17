@@ -48,3 +48,13 @@ CREATE TABLE IF NOT EXISTS Result (
     FOREIGN KEY (user_id) REFERENCES User(user_id),
     FOREIGN KEY (quiz_id) REFERENCES Quiz(quiz_id)
 );
+
+CREATE TABLE IF NOT EXISTS ResultAnswer (
+    result_id       INTEGER NOT NULL,
+    question_id     INTEGER NOT NULL,
+    selected_option CHAR(1) NOT NULL DEFAULT '',     -- '' when left unanswered
+    is_correct      INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (result_id, question_id),
+    FOREIGN KEY (result_id)   REFERENCES Result(result_id)     ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES Question(question_id) ON DELETE CASCADE
+);

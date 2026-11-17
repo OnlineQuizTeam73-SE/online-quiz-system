@@ -3,3 +3,6 @@ __pycache__/
 quiz.db
 
 .venv/
+.coverage
+htmlcov/
+.pytest_cache/

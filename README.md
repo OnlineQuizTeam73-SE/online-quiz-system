@@ -117,7 +117,8 @@ python init_db.py
 ### Start the application
 
 ```bash
-python app.py
+export SECRET_KEY="choose-a-long-random-value"   # optional for local testing, required for real use
+python app.py                                      # add FLASK_DEBUG=1 to turn on Flask debug mode
 ```
 
 Open the application in a browser:
