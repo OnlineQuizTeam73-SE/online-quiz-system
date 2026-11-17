@@ -205,7 +205,7 @@ def quiz(quiz_id):
     )
 
 
-# ---------- Sprint 2: Rahul's Modules (S2-01 to S2-07) ----------
+# ---------- Sprint 2: Ragul's Modules (S2-01 to S2-07) ----------
 @app.route("/quiz/<int:quiz_id>/submit", methods=["POST"])
 @login_required
 def submit_quiz(quiz_id):

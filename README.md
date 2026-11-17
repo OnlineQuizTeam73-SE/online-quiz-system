@@ -16,7 +16,7 @@ The application also provides administrative functionality for managing quiz cat
 | 1 | Nakshathira | PES2UG24AM096 |
 | 2 | Poojitha P. | PES2UG24AM112 |
 | 3 | Sharanya N. | PES2UG24AM150 |
-| 4 | Rahul Rajkumar S. | PES2UG24AM128 |
+| 4 | Ragul Rajkumar S. | PES2UG24AM128 |
 
 ## 3. Key Features
 
