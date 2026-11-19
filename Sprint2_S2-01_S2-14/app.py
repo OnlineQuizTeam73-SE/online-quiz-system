@@ -9,13 +9,14 @@ from flask import Flask, g, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 BASE = os.path.dirname(__file__)
-DB = os.path.join(BASE, "quiz.db")
+DB = os.path.abspath(os.getenv("DATABASE_PATH", os.path.join(BASE, "quiz.db")))
 
 app = Flask(__name__)
-DEFAULT_SECRET = "change-this-before-submission-team73"
-app.secret_key = os.getenv("SECRET_KEY", DEFAULT_SECRET)
-if app.secret_key == DEFAULT_SECRET:
-    print("WARNING: using the default SECRET_KEY. Set the SECRET_KEY environment variable before any real use.")
+APP_ENV = os.getenv("APP_ENV", "development").lower()
+secret_key = os.getenv("SECRET_KEY")
+if not secret_key and APP_ENV == "production":
+    raise RuntimeError("SECRET_KEY must be set when APP_ENV=production.")
+app.secret_key = secret_key or os.urandom(32)
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
