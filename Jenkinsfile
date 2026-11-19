@@ -8,10 +8,9 @@ pipeline {
     }
 
     environment {
-        PATH+HOMEBREW = '/opt/homebrew/bin'
-        PATH+DOCKER = "${env.HOME}/.docker/bin"
+        PATH = "/opt/homebrew/bin:${env.HOME}/.docker/bin:${env.PATH}"
         IMAGE_NAME = 'online-quiz-team73'
-        CONTAINER_NAME = 'online-quiz-team73'
+        CONTAINER_NAME = 'se-final-container'
         DATA_VOLUME = 'online-quiz-team73-data'
         HOST_PORT = '8000'
         SECRET_CREDENTIAL_ID = 'flask-secret-key'
